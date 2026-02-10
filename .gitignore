@@ -1,4 +1,9 @@
+# Dans PowerShell
+New-Item -Path ".gitignore" -ItemType File -Force
+```
 
+Puis ouvre-le dans VS Code et colle ce contenu :
+```
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php
@@ -11,10 +16,23 @@
 
 ###> phpunit/phpunit ###
 /phpunit.xml
-/.phpunit.cache/
+.phpunit.result.cache
 ###< phpunit/phpunit ###
 
-###> symfony/asset-mapper ###
-/public/assets/
-/assets/vendor/
-###< symfony/asset-mapper ###
+###> symfony/webpack-encore-bundle ###
+/node_modules/
+/public/build/
+npm-debug.log
+yarn-error.log
+###< symfony/webpack-encore-bundle ###
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
