@@ -2,12 +2,12 @@
   "entrypoints": {
     "app": {
       "js": [
-        "/build/runtime.509adf86.js",
-        "/build/830.21e47f57.js",
-        "/build/app.0a470e34.js"
+        "/build/runtime.js",
+        "/build/vendors-node_modules_vue-loader_dist_exportHelper_js-node_modules_vue_dist_vue_esm-bundler_js-a3f57b.js",
+        "/build/app.js"
       ],
       "css": [
-        "/build/app.58532bb4.css"
+        "/build/app.css"
       ]
     }
   }
