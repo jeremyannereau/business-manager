@@ -2,6 +2,8 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import EtapesKanban from './components/EtapesKanban.vue';
 import Dashboard from './components/Dashboard.vue';
+import Calendrier from './components/Calendrier.vue';
+import Finances from './components/Finances.vue';
 
 // Import du Design System
 import './styles/design-system.css';
@@ -21,5 +23,7 @@ app.component('Modal', Modal);
 app.component('Badge', Badge);
 app.component('EtapesKanban', EtapesKanban);
 app.component('Dashboard', Dashboard);
+app.component('Calendrier', Calendrier);
+app.component('Finances', Finances);
 
 app.mount('#app');

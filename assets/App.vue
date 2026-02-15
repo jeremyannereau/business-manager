@@ -27,6 +27,18 @@
           >
             📋 Suivi des Étapes
           </button>
+          <button 
+            @click="currentView = 'calendrier'" 
+            :class="['nav-button', { active: currentView === 'calendrier' }]"
+          >
+            📅 Calendrier
+          </button>
+          <button 
+            @click="currentView = 'finances'" 
+            :class="['nav-button', { active: currentView === 'finances' }]"
+          >
+            💰 Finances
+          </button>
         </nav>
       </div>
     </header>
@@ -37,10 +49,10 @@
       <div v-if="currentView === 'home'" class="home-view">
         <Card class="welcome-card">
           <h2>👋 Bienvenue sur ton Business Manager</h2>
-          <p>Ton tableau de bord entrepreneurial est prêt !</p>
+          <p>Ton tableau de bord entrepreneurial complet est prêt !</p>
           
           <div class="welcome-status">
-            ✅ Symfony 7.2 + Vue.js 3 fonctionnent parfaitement
+            ✅ Application V1 complète avec 5 modules fonctionnels
           </div>
         </Card>
 
@@ -54,19 +66,52 @@
           <Card class="feature-card" hoverable @click="currentView = 'kanban'">
             <div class="feature-icon">📋</div>
             <h3>Suivi des Étapes</h3>
-            <p>Gère toutes les étapes de création de ton entreprise</p>
+            <p>Kanban avec drag & drop et filtres avancés</p>
           </Card>
 
-          <Card class="feature-card disabled">
-            <div class="feature-icon">📁</div>
-            <h3>Documents</h3>
-            <p>Bientôt disponible</p>
-          </Card>
-
-          <Card class="feature-card disabled">
+          <Card class="feature-card" hoverable @click="currentView = 'calendrier'">
             <div class="feature-icon">📅</div>
             <h3>Calendrier</h3>
-            <p>Bientôt disponible</p>
+            <p>Visualise tes échéances et planifie ton projet</p>
+          </Card>
+
+          <Card class="feature-card" hoverable @click="currentView = 'finances'">
+            <div class="feature-icon">💰</div>
+            <h3>Finances</h3>
+            <p>Budget, trésorerie et suivi des dépenses</p>
+          </Card>
+        </div>
+
+        <!-- Stats rapides -->
+        <div class="home-stats">
+          <Card class="home-stat-card">
+            <div class="stat-content">
+              <div class="stat-icon">🎯</div>
+              <div class="stat-details">
+                <span class="stat-value">V1</span>
+                <span class="stat-label">Version Actuelle</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card class="home-stat-card">
+            <div class="stat-content">
+              <div class="stat-icon">🚀</div>
+              <div class="stat-details">
+                <span class="stat-value">5</span>
+                <span class="stat-label">Modules Actifs</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card class="home-stat-card">
+            <div class="stat-content">
+              <div class="stat-icon">⚡</div>
+              <div class="stat-details">
+                <span class="stat-value">100%</span>
+                <span class="stat-label">Opérationnel</span>
+              </div>
+            </div>
           </Card>
         </div>
       </div>
@@ -79,23 +124,44 @@
 
       <!-- Vue Kanban -->
       <EtapesKanban v-if="currentView === 'kanban'" />
+
+      <!-- Vue Calendrier -->
+      <Calendrier 
+        v-if="currentView === 'calendrier'"
+        @navigate="navigateTo"
+      />
+
+      <!-- Vue Finances -->
+      <Finances v-if="currentView === 'finances'" />
     </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <p>&copy; 2026 Business Manager - Mon Assistant Numérique</p>
+        <p class="footer-version">Version 1.0 - Symfony 7.2 + Vue.js 3</p>
+      </div>
+    </footer>
   </div>
 </template>
 
 <script>
 import EtapesKanban from './components/EtapesKanban.vue'
 import Dashboard from './components/Dashboard.vue'
+import Calendrier from './components/Calendrier.vue'
+import Finances from './components/Finances.vue'
 
 export default {
   name: 'App',
   components: {
     EtapesKanban,
-    Dashboard
+    Dashboard,
+    Calendrier,
+    Finances
   },
   data() {
     return {
-      currentView: 'home' // home, dashboard, kanban
+      currentView: 'home' // home, dashboard, kanban, calendrier, finances
     }
   },
   methods: {
@@ -152,6 +218,7 @@ export default {
 .header-nav {
   display: flex;
   gap: var(--space-sm);
+  flex-wrap: wrap;
 }
 
 .nav-button {
@@ -160,11 +227,12 @@ export default {
   border: 2px solid rgba(255, 255, 255, 0.2);
   color: white;
   border-radius: var(--radius-lg);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-base);
   backdrop-filter: blur(10px);
+  white-space: nowrap;
 }
 
 .nav-button:hover {
@@ -221,6 +289,7 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
 }
 
 .feature-card {
@@ -229,12 +298,7 @@ export default {
   transition: all var(--transition-base);
 }
 
-.feature-card.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.feature-card:not(.disabled):hover {
+.feature-card:hover {
   transform: translateY(-8px);
 }
 
@@ -255,6 +319,71 @@ export default {
   font-size: 0.875rem;
 }
 
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-lg);
+}
+
+.home-stat-card {
+  background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+}
+
+.stat-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.stat-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Footer */
+.app-footer {
+  background: var(--gray-800);
+  color: var(--gray-300);
+  padding: var(--space-lg) 0;
+  margin-top: auto;
+}
+
+.footer-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--space-xl);
+  text-align: center;
+}
+
+.footer-content p {
+  margin: var(--space-xs) 0;
+  font-size: 0.875rem;
+}
+
+.footer-version {
+  color: var(--gray-400);
+  font-size: 0.75rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header-container {
@@ -268,6 +397,10 @@ export default {
   
   .nav-button {
     width: 100%;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
