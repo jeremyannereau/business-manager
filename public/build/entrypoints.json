@@ -2,26 +2,25 @@
   "entrypoints": {
     "app": {
       "js": [
-        "/build/runtime.js",
-        "/build/vendors-node_modules_vue-loader_dist_exportHelper_js-node_modules_vue_dist_vue_esm-bundler_js-371333.js",
-        "/build/vendors-node_modules_vuedraggable_dist_vuedraggable_umd_js-node_modules_core-js_modules_es_ar-ce6421.js",
-        "/build/assets_styles_design-system_css-assets_components_auth_Login_vue-assets_components_auth_Regis-bdc358.js",
-        "/build/app.js"
+        "/build/runtime.544b3ba4.js",
+        "/build/346.531120df.js",
+        "/build/496.f201f61a.js",
+        "/build/70.38fed122.js",
+        "/build/app.bf7f453e.js"
       ],
       "css": [
-        "/build/assets_styles_design-system_css-assets_components_auth_Login_vue-assets_components_auth_Regis-bdc358.css",
-        "/build/app.css"
+        "/build/app.3ce4199e.css"
       ]
     },
     "auth": {
       "js": [
-        "/build/runtime.js",
-        "/build/vendors-node_modules_vue-loader_dist_exportHelper_js-node_modules_vue_dist_vue_esm-bundler_js-371333.js",
-        "/build/assets_styles_design-system_css-assets_components_auth_Login_vue-assets_components_auth_Regis-bdc358.js",
-        "/build/auth.js"
+        "/build/runtime.544b3ba4.js",
+        "/build/346.531120df.js",
+        "/build/70.38fed122.js",
+        "/build/auth.bae41379.js"
       ],
       "css": [
-        "/build/assets_styles_design-system_css-assets_components_auth_Login_vue-assets_components_auth_Regis-bdc358.css"
+        "/build/auth.6fcb287f.css"
       ]
     }
   }
