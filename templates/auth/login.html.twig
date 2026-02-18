@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Connexion - Business Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ encore_entry_link_tags('auth') }}
+</head>
+<body>
+    <div id="auth-app" data-csrf-token="{{ csrf_token('authenticate') }}">
+        <login></login>
+    </div>
+    {{ encore_entry_script_tags('auth') }}
+</body>
+</html>

@@ -63,23 +63,23 @@
 
     <!-- Graphiques -->
     <div class="charts-section">
-      <Card class="chart-card">
-        <template #header>
-          <h3 class="chart-title">📊 Répartition des Dépenses</h3>
-        </template>
-        <div class="chart-container">
-          <canvas ref="expenseChart"></canvas>
+    <Card class="chart-card" padding="none">
+        <div class="chart-header-custom">
+        <h3 class="chart-title">📊 Répartition des Dépenses</h3>
         </div>
-      </Card>
+        <div class="chart-container">
+        <canvas ref="expenseChart"></canvas>
+        </div>
+    </Card>
 
-      <Card class="chart-card">
-        <template #header>
-          <h3 class="chart-title">📈 Évolution Mensuelle</h3>
-        </template>
-        <div class="chart-container">
-          <canvas ref="monthlyChart"></canvas>
+    <Card class="chart-card" padding="none">
+        <div class="chart-header-custom">
+        <h3 class="chart-title">📈 Évolution Mensuelle</h3>
         </div>
-      </Card>
+        <div class="chart-container">
+        <canvas ref="monthlyChart"></canvas>
+        </div>
+    </Card>
     </div>
 
     <!-- Filtres et Transactions -->
@@ -256,8 +256,8 @@
         <Button @click="closeTransactionModal" variant="secondary">
           Annuler
         </Button>
-        <Button @click="saveTransaction" :loading="saving">
-          💾 Enregistrer
+        <Button @click="saveTransaction" :loading="saving" :disabled="saving">
+        💾 Enregistrer
         </Button>
       </template>
     </Modal>
@@ -406,17 +406,17 @@ export default {
   },
   methods: {
     async loadTransactions() {
-      // Simule le chargement depuis une API
-      // TODO: Remplacer par un vrai appel API
-      const stored = localStorage.getItem('transactions')
-      if (stored) {
-        this.transactions = JSON.parse(stored)
-      }
-      
-      this.$nextTick(() => {
-        this.createCharts()
-      })
-    },
+        try {
+            const response = await fetch('/api/transactions')
+            this.transactions = await response.json()
+            
+            this.$nextTick(() => {
+            this.createCharts()
+            })
+        } catch (error) {
+            console.error('Erreur chargement transactions:', error)
+        }
+        },
     async loadBudgetConfig() {
       const stored = localStorage.getItem('budgetConfig')
       if (stored) {
@@ -424,34 +424,54 @@ export default {
       }
     },
     async saveTransaction() {
-      this.saving = true
-      
-      const newTransaction = {
-        id: Date.now(),
-        ...this.transactionForm,
-        createdAt: new Date().toISOString()
-      }
-      
-      this.transactions.push(newTransaction)
-      localStorage.setItem('transactions', JSON.stringify(this.transactions))
-      
-      this.closeTransactionModal()
-      this.saving = false
-      
-      this.$nextTick(() => {
+    // Empêcher les doubles clics
+    if (this.saving) return
+    
+    this.saving = true
+    
+    try {
+        const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.transactionForm)
+        })
+        
+        if (!response.ok) {
+        throw new Error('Erreur lors de la sauvegarde')
+        }
+        
+        const newTransaction = await response.json()
+        this.transactions.push(newTransaction)
+        
+        this.closeTransactionModal()
+        
+        this.$nextTick(() => {
         this.createCharts()
-      })
+        })
+    } catch (error) {
+        console.error('Erreur sauvegarde transaction:', error)
+        alert('Erreur lors de la sauvegarde de la transaction')
+    } finally {
+        this.saving = false
+    }
     },
     async deleteTransaction(transaction) {
-      if (!confirm(`Supprimer la transaction "${transaction.description}" ?`)) return
-      
-      this.transactions = this.transactions.filter(t => t.id !== transaction.id)
-      localStorage.setItem('transactions', JSON.stringify(this.transactions))
-      
-      this.$nextTick(() => {
-        this.createCharts()
-      })
-    },
+        if (!confirm(`Supprimer la transaction "${transaction.description}" ?`)) return
+        
+        try {
+            await fetch(`/api/transactions/${transaction.id}`, { 
+            method: 'DELETE' 
+            })
+            
+            this.transactions = this.transactions.filter(t => t.id !== transaction.id)
+            
+            this.$nextTick(() => {
+            this.createCharts()
+            })
+        } catch (error) {
+            console.error('Erreur suppression transaction:', error)
+        }
+        },
     saveBudgetConfig() {
       localStorage.setItem('budgetConfig', JSON.stringify(this.budgetConfig))
       this.closeBudgetModal()
@@ -724,6 +744,7 @@ export default {
 
 .chart-card {
   min-height: 400px;
+  overflow: hidden; /* Ajoute cette ligne */
 }
 
 .chart-title {
@@ -731,6 +752,8 @@ export default {
   font-size: 1.125rem;
   color: var(--text-primary);
   font-weight: 600;
+  position: relative; /* Ajoute cette ligne */
+  z-index: 10; /* Ajoute cette ligne */
 }
 
 .chart-container {
