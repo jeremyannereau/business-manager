@@ -8,14 +8,17 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/transactions')]
+#[IsGranted('ROLE_USER')]
 class TransactionController extends AbstractController
 {
     #[Route('', name: 'api_transactions_list', methods: ['GET'])]
     public function list(EntityManagerInterface $em): JsonResponse
     {
-        $transactions = $em->getRepository(Transaction::class)->findBy([], ['date' => 'DESC']);
+        $user = $this->getUser();
+        $transactions = $em->getRepository(Transaction::class)->findBy(['user' => $user], ['date' => 'DESC']);
         
         $data = array_map(function($transaction) {
             return [
@@ -37,6 +40,7 @@ class TransactionController extends AbstractController
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
+        $user = $this->getUser();
         
         $transaction = new Transaction();
         $transaction->setType($data['type']);
@@ -46,6 +50,7 @@ class TransactionController extends AbstractController
         $transaction->setCategory($data['category']);
         $transaction->setNotes($data['notes'] ?? null);
         $transaction->setCreatedAt(new \DateTimeImmutable());
+        $transaction->setUser($user);
         
         $em->persist($transaction);
         $em->flush();
@@ -65,8 +70,8 @@ class TransactionController extends AbstractController
     #[Route('/{id}', name: 'api_transactions_update', methods: ['PUT'])]
     public function update(int $id, Request $request, EntityManagerInterface $em): JsonResponse
     {
-        $transaction = $em->getRepository(Transaction::class)->find($id);
-        
+        $user = $this->getUser();
+        $transaction = $em->getRepository(Transaction::class)->findOneBy(['id' => $id, 'user' => $user]);
         if (!$transaction) {
             return $this->json(['error' => 'Transaction not found'], 404);
         }
@@ -79,6 +84,10 @@ class TransactionController extends AbstractController
         $transaction->setDate(new \DateTime($data['date']));
         $transaction->setCategory($data['category']);
         $transaction->setNotes($data['notes'] ?? null);
+        
+
+        $user = $this->getUser();
+        
         
         $em->flush();
         
@@ -96,7 +105,8 @@ class TransactionController extends AbstractController
     #[Route('/{id}', name: 'api_transactions_delete', methods: ['DELETE'])]
     public function delete(int $id, EntityManagerInterface $em): JsonResponse
     {
-        $transaction = $em->getRepository(Transaction::class)->find($id);
+        $user = $this->getUser();
+        $transaction = $em->getRepository(Transaction::class)->findOneBy(['id' => $id, 'user' => $user]);
         
         if (!$transaction) {
             return $this->json(['error' => 'Transaction not found'], 404);

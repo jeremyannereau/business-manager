@@ -409,13 +409,14 @@ export default {
       form: {
         titre: '',
         description: '',
-        dateDebut: '',
-        dateLimite: '',
-        notes: '',
         statut: 'todo',
-        ordre: 0,
-        priority: '',
-        category: ''
+        priority: null,
+        category: null,
+        dateDebut: null,
+        dateLimite: null,
+        notes: '',
+        progression: 0,  // ← AJOUTE CETTE LIGNE
+        ordre: 0
       },
       // Listes locales pour le drag & drop
       todoList: [],
@@ -506,28 +507,41 @@ export default {
       }
     },
     async saveEtape() {
-      this.saving = true
-      try {
-        const url = this.editingEtape 
-          ? `/api/etapes/${this.editingEtape.id}`
-          : '/api/etapes'
+          this.saving = true
         
-        const method = this.editingEtape ? 'PUT' : 'POST'
+        console.log('=== DEBUG SAVE ETAPE ===')
+        console.log('Form data:', this.form)
+        console.log('Editing etape:', this.editingEtape)
         
-        await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.form)
-        })
-        
-        this.closeModal()
-        await this.loadEtapes()
-      } catch (error) {
-        console.error('Erreur sauvegarde:', error)
-      } finally {
-        this.saving = false
-      }
-    },
+        try {
+          const url = this.editingEtape
+            ? `/api/etapes/${this.editingEtape.id}`
+            : '/api/etapes'
+          
+          const method = this.editingEtape ? 'PUT' : 'POST'
+          
+          console.log('URL:', url)
+          console.log('Method:', method)
+          console.log('Body:', JSON.stringify(this.form))
+          
+          const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.form)
+          })
+          
+          console.log('Response status:', response.status)
+          const data = await response.json()
+          console.log('Response data:', data)
+          
+          this.closeModal()
+          await this.loadEtapes()
+        } catch (error) {
+          console.error('Erreur sauvegarde:', error)
+        } finally {
+          this.saving = false
+        }
+      },
     async changeStatut(etape, newStatut) {
       try {
         await fetch(`/api/etapes/${etape.id}`, {

@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Entity;
-
+use App\Entity\User;
 use App\Repository\TransactionRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -34,6 +34,10 @@ class Transaction
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
+    
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
 
     public function getId(): ?int
     {
@@ -121,6 +125,17 @@ class Transaction
     {
         $this->createdAt = $createdAt;
 
+        return $this;
+    }
+    
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        $this->user = $user;
         return $this;
     }
 }

@@ -40,6 +40,8 @@
             💰 Finances
           </button>
         </nav>
+        <!-- Menu utilisateur -->
+        <UserMenu @navigate="navigateTo" />
       </div>
     </header>
 
@@ -150,6 +152,7 @@ import EtapesKanban from './components/EtapesKanban.vue'
 import Dashboard from './components/Dashboard.vue'
 import Calendrier from './components/Calendrier.vue'
 import Finances from './components/Finances.vue'
+import UserMenu from './components/UserMenu.vue'
 
 export default {
   name: 'App',
@@ -157,11 +160,12 @@ export default {
     EtapesKanban,
     Dashboard,
     Calendrier,
-    Finances
+    Finances,
+    UserMenu
   },
   data() {
     return {
-      currentView: 'home' // home, dashboard, kanban, calendrier, finances
+      currentView: 'home' // home, dashboard, kanban, calendrier, finances, profile, settings
     }
   },
   methods: {
@@ -403,4 +407,6 @@ export default {
     grid-template-columns: 1fr;
   }
 }
+
+
 </style>

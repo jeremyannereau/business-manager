@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Entity;
-
+use App\Entity\User;
 use App\Repository\EtapeRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -46,6 +46,13 @@ class Etape
 
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $category = null;
+    
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $progression = 0;
 
     public function getId(): ?int
     {
@@ -136,12 +143,12 @@ class Etape
         return $this;
     }
 
-    public function getOrdre(): ?int
+    public function getOrder(): ?int
     {
         return $this->ordre;
     }
 
-    public function setOrdre(int $ordre): static
+    public function setOrder(int $ordre): static
     {
         $this->ordre = $ordre;
 
@@ -181,6 +188,28 @@ class Etape
     {
         $this->category = $category;
 
+        return $this;
+    }
+
+    public function getProgression(): int
+    {
+        return $this->progression;
+    }
+
+    public function setProgression(int $progression): static
+    {
+        $this->progression = $progression;
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        $this->user = $user;
         return $this;
     }
 }
