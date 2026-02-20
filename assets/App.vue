@@ -2,6 +2,7 @@
   <div id="app">
     <!-- Header avec navigation -->
     <header class="app-header">
+      
       <div class="header-container">
         <div class="header-brand">
           <h1>Business Manager</h1>
@@ -40,7 +41,9 @@
             💰 Finances
           </button>
         </nav>
+        <UserMenu @navigate="navigateTo" />
       </div>
+      
     </header>
 
     <!-- Contenu principal -->

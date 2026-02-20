@@ -6,6 +6,10 @@ import Calendrier from './components/Calendrier.vue';
 import Finances from './components/Finances.vue';
 import Login from './components/auth/Login.vue';
 import Register from './components/auth/Register.vue';
+import UserMenu from './components/UserMenu.vue';
+import OfflineIndicator from './components/OfflineIndicator.vue';
+import BottomNav from './components/BottomNav.vue';
+import InstallPrompt from './components/InstallPrompt.vue';
 
 // Import du Design System
 import './styles/design-system.css';
@@ -29,5 +33,9 @@ app.component('Calendrier', Calendrier);
 app.component('Finances', Finances);
 app.component('Login', Login);
 app.component('Register', Register);
+app.component('UserMenu', UserMenu);
+app.component('OfflineIndicator', OfflineIndicator);
+app.component('BottomNav', BottomNav);
+app.component('InstallPrompt', InstallPrompt);
 
 app.mount('#app');
