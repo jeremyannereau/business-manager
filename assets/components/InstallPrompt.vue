@@ -32,6 +32,7 @@ export default {
   mounted() {
     window.addEventListener('beforeinstallprompt', this.handleBeforeInstallPrompt)
     
+    // Vérifier si déjà installé
     if (window.matchMedia('(display-mode: standalone)').matches) {
       console.log('App déjà installée')
     }
@@ -44,6 +45,7 @@ export default {
       e.preventDefault()
       this.deferredPrompt = e
       
+      // Attendre 5 secondes avant de montrer le prompt
       setTimeout(() => {
         this.showInstallPrompt = true
       }, 5000)

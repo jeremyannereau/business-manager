@@ -102,10 +102,4 @@ export default {
   font-size: 0.7rem;
   font-weight: 600;
 }
-
-@media (min-width: 768px) {
-  .bottom-nav {
-    display: none;
-  }
-}
 </style>
