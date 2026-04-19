@@ -8,28 +8,33 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/transactions')]
+#[IsGranted('ROLE_USER')]
 class TransactionController extends AbstractController
 {
     #[Route('', name: 'api_transactions_list', methods: ['GET'])]
     public function list(EntityManagerInterface $em): JsonResponse
     {
-        $transactions = $em->getRepository(Transaction::class)->findBy([], ['date' => 'DESC']);
-        
-        $data = array_map(function($transaction) {
+        $transactions = $em->getRepository(Transaction::class)->findBy(
+            ['user' => $this->getUser()],
+            ['date' => 'DESC']
+        );
+
+        $data = array_map(function ($transaction) {
             return [
-                'id' => $transaction->getId(),
-                'type' => $transaction->getType(),
+                'id'          => $transaction->getId(),
+                'type'        => $transaction->getType(),
                 'description' => $transaction->getDescription(),
-                'amount' => (float) $transaction->getAmount(),
-                'date' => $transaction->getDate()->format('Y-m-d'),
-                'category' => $transaction->getCategory(),
-                'notes' => $transaction->getNotes(),
-                'createdAt' => $transaction->getCreatedAt()->format('Y-m-d H:i:s')
+                'amount'      => (float) $transaction->getAmount(),
+                'date'        => $transaction->getDate()->format('Y-m-d'),
+                'category'    => $transaction->getCategory(),
+                'notes'       => $transaction->getNotes(),
+                'createdAt'   => $transaction->getCreatedAt()->format('Y-m-d H:i:s'),
             ];
         }, $transactions);
-        
+
         return $this->json($data);
     }
 
@@ -37,7 +42,7 @@ class TransactionController extends AbstractController
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
+
         $transaction = new Transaction();
         $transaction->setType($data['type']);
         $transaction->setDescription($data['description']);
@@ -46,19 +51,20 @@ class TransactionController extends AbstractController
         $transaction->setCategory($data['category']);
         $transaction->setNotes($data['notes'] ?? null);
         $transaction->setCreatedAt(new \DateTimeImmutable());
-        
+        $transaction->setUser($this->getUser()); // Association a l utilisateur courant
+
         $em->persist($transaction);
         $em->flush();
-        
+
         return $this->json([
-            'id' => $transaction->getId(),
-            'type' => $transaction->getType(),
+            'id'          => $transaction->getId(),
+            'type'        => $transaction->getType(),
             'description' => $transaction->getDescription(),
-            'amount' => (float) $transaction->getAmount(),
-            'date' => $transaction->getDate()->format('Y-m-d'),
-            'category' => $transaction->getCategory(),
-            'notes' => $transaction->getNotes(),
-            'createdAt' => $transaction->getCreatedAt()->format('Y-m-d H:i:s')
+            'amount'      => (float) $transaction->getAmount(),
+            'date'        => $transaction->getDate()->format('Y-m-d'),
+            'category'    => $transaction->getCategory(),
+            'notes'       => $transaction->getNotes(),
+            'createdAt'   => $transaction->getCreatedAt()->format('Y-m-d H:i:s'),
         ], 201);
     }
 
@@ -66,30 +72,35 @@ class TransactionController extends AbstractController
     public function update(int $id, Request $request, EntityManagerInterface $em): JsonResponse
     {
         $transaction = $em->getRepository(Transaction::class)->find($id);
-        
+
         if (!$transaction) {
             return $this->json(['error' => 'Transaction not found'], 404);
         }
-        
+
+        // Verification que la transaction appartient bien a l utilisateur courant
+        if ($transaction->getUser()?->getId() !== $this->getUser()->getId()) {
+            return $this->json(['error' => 'Acces non autorise'], 403);
+        }
+
         $data = json_decode($request->getContent(), true);
-        
+
         $transaction->setType($data['type']);
         $transaction->setDescription($data['description']);
         $transaction->setAmount($data['amount']);
         $transaction->setDate(new \DateTime($data['date']));
         $transaction->setCategory($data['category']);
         $transaction->setNotes($data['notes'] ?? null);
-        
+
         $em->flush();
-        
+
         return $this->json([
-            'id' => $transaction->getId(),
-            'type' => $transaction->getType(),
+            'id'          => $transaction->getId(),
+            'type'        => $transaction->getType(),
             'description' => $transaction->getDescription(),
-            'amount' => (float) $transaction->getAmount(),
-            'date' => $transaction->getDate()->format('Y-m-d'),
-            'category' => $transaction->getCategory(),
-            'notes' => $transaction->getNotes()
+            'amount'      => (float) $transaction->getAmount(),
+            'date'        => $transaction->getDate()->format('Y-m-d'),
+            'category'    => $transaction->getCategory(),
+            'notes'       => $transaction->getNotes(),
         ]);
     }
 
@@ -97,14 +108,19 @@ class TransactionController extends AbstractController
     public function delete(int $id, EntityManagerInterface $em): JsonResponse
     {
         $transaction = $em->getRepository(Transaction::class)->find($id);
-        
+
         if (!$transaction) {
             return $this->json(['error' => 'Transaction not found'], 404);
         }
-        
+
+        // Verification que la transaction appartient bien a l utilisateur courant
+        if ($transaction->getUser()?->getId() !== $this->getUser()->getId()) {
+            return $this->json(['error' => 'Acces non autorise'], 403);
+        }
+
         $em->remove($transaction);
         $em->flush();
-        
+
         return $this->json(['success' => true]);
     }
 }

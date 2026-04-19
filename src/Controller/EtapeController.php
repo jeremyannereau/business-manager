@@ -9,30 +9,37 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/etapes')]
+#[IsGranted('ROLE_USER')]
 class EtapeController extends AbstractController
 {
     #[Route('', name: 'etapes_list', methods: ['GET'])]
     public function list(EntityManagerInterface $em): JsonResponse
     {
-        $etapes = $em->getRepository(Etape::class)->findBy([], ['ordre' => 'ASC']);
-        
-        $data = array_map(function(Etape $etape) {
+        $etapes = $em->getRepository(Etape::class)->findBy(
+            ['user' => $this->getUser()],
+            ['ordre' => 'ASC']
+        );
+
+        $data = array_map(function (Etape $etape) {
             return [
-                'id' => $etape->getId(),
-                'titre' => $etape->getTitre(),
+                'id'          => $etape->getId(),
+                'titre'       => $etape->getTitre(),
                 'description' => $etape->getDescription(),
-                'statut' => $etape->getStatut(),
-                'dateDebut' => $etape->getDateDebut()?->format('Y-m-d'),
-                'dateLimite' => $etape->getDateLimite()?->format('Y-m-d'),
-                'documents' => $etape->getDocuments(),
-                'notes' => $etape->getNotes(),
-                'ordre' => $etape->getOrdre(),
-                'createdAt' => $etape->getCreatedAt()->format('Y-m-d H:i:s'),
+                'statut'      => $etape->getStatut(),
+                'dateDebut'   => $etape->getDateDebut()?->format('Y-m-d'),
+                'dateLimite'  => $etape->getDateLimite()?->format('Y-m-d'),
+                'documents'   => $etape->getDocuments(),
+                'notes'       => $etape->getNotes(),
+                'ordre'       => $etape->getOrdre(),
+                'priority'    => $etape->getPriority(),
+                'category'    => $etape->getCategory(),
+                'createdAt'   => $etape->getCreatedAt()->format('Y-m-d H:i:s'),
             ];
         }, $etapes);
-        
+
         return $this->json($data);
     }
 
@@ -40,14 +47,17 @@ class EtapeController extends AbstractController
     public function create(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-        
+
         $etape = new Etape();
         $etape->setTitre($data['titre']);
         $etape->setDescription($data['description'] ?? null);
         $etape->setStatut($data['statut'] ?? 'todo');
         $etape->setOrdre($data['ordre'] ?? 0);
+        $etape->setPriority($data['priority'] ?? null);
+        $etape->setCategory($data['category'] ?? null);
         $etape->setCreatedAt(new \DateTimeImmutable());
-        
+        $etape->setUser($this->getUser()); // Association a l utilisateur courant
+
         if (!empty($data['dateDebut'])) {
             $etape->setDateDebut(new \DateTime($data['dateDebut']));
         }
@@ -57,54 +67,66 @@ class EtapeController extends AbstractController
         if (!empty($data['notes'])) {
             $etape->setNotes($data['notes']);
         }
-        
+
         $em->persist($etape);
         $em->flush();
-        
-        return $this->json(['id' => $etape->getId(), 'message' => 'Étape créée'], Response::HTTP_CREATED);
+
+        return $this->json(['id' => $etape->getId(), 'message' => 'Etape creee'], Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'etapes_update', methods: ['PUT'])]
     public function update(int $id, Request $request, EntityManagerInterface $em): JsonResponse
     {
         $etape = $em->getRepository(Etape::class)->find($id);
-        
+
         if (!$etape) {
-            return $this->json(['error' => 'Étape non trouvée'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Etape non trouvee'], Response::HTTP_NOT_FOUND);
         }
-        
+
+        // Verification que l etape appartient bien a l utilisateur courant
+        if ($etape->getUser()?->getId() !== $this->getUser()->getId()) {
+            return $this->json(['error' => 'Acces non autorise'], Response::HTTP_FORBIDDEN);
+        }
+
         $data = json_decode($request->getContent(), true);
-        
-        if (isset($data['titre'])) $etape->setTitre($data['titre']);
+
+        if (isset($data['titre']))       $etape->setTitre($data['titre']);
         if (isset($data['description'])) $etape->setDescription($data['description']);
-        if (isset($data['statut'])) $etape->setStatut($data['statut']);
-        if (isset($data['ordre'])) $etape->setOrdre($data['ordre']);
-        if (isset($data['notes'])) $etape->setNotes($data['notes']);
-        
+        if (isset($data['statut']))      $etape->setStatut($data['statut']);
+        if (isset($data['ordre']))       $etape->setOrdre($data['ordre']);
+        if (isset($data['notes']))       $etape->setNotes($data['notes']);
+        if (isset($data['priority']))    $etape->setPriority($data['priority']);
+        if (isset($data['category']))    $etape->setCategory($data['category']);
+
         if (isset($data['dateDebut'])) {
             $etape->setDateDebut($data['dateDebut'] ? new \DateTime($data['dateDebut']) : null);
         }
         if (isset($data['dateLimite'])) {
             $etape->setDateLimite($data['dateLimite'] ? new \DateTime($data['dateLimite']) : null);
         }
-        
+
         $em->flush();
-        
-        return $this->json(['message' => 'Étape mise à jour']);
+
+        return $this->json(['message' => 'Etape mise a jour']);
     }
 
     #[Route('/{id}', name: 'etapes_delete', methods: ['DELETE'])]
     public function delete(int $id, EntityManagerInterface $em): JsonResponse
     {
         $etape = $em->getRepository(Etape::class)->find($id);
-        
+
         if (!$etape) {
-            return $this->json(['error' => 'Étape non trouvée'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Etape non trouvee'], Response::HTTP_NOT_FOUND);
         }
-        
+
+        // Verification que l etape appartient bien a l utilisateur courant
+        if ($etape->getUser()?->getId() !== $this->getUser()->getId()) {
+            return $this->json(['error' => 'Acces non autorise'], Response::HTTP_FORBIDDEN);
+        }
+
         $em->remove($etape);
         $em->flush();
-        
-        return $this->json(['message' => 'Étape supprimée']);
+
+        return $this->json(['message' => 'Etape supprimee']);
     }
 }

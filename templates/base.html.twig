@@ -3,44 +3,74 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-        
+
         <title>{% block title %}Business Manager{% endblock %}</title>
-        
-        {# PWA Meta Tags #}
-        <meta name="description" content="Gestion de ton projet entrepreneurial - Mon Assistant Numérique">
-        <meta name="theme-color" content="#667eea">
+
+        {# ── PWA Meta ─────────────────────────────────────────────────────── #}
+        <meta name="description" content="Gestion de votre activité">
+        <meta name="theme-color" content="#667eea" id="meta-theme-color">
         <meta name="mobile-web-app-capable" content="yes">
+
+        {# iOS specific #}
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="default">
-        <meta name="apple-mobile-web-app-title" content="Business Manager">
-        
-        {# PWA Manifest #}
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="Business Manager" id="meta-apple-title">
+
+        {# Open Graph (partage) #}
+        <meta property="og:type"  content="website">
+        <meta property="og:title" content="Business Manager">
+
+        {# ── Manifest dynamique (généré par ManifestController) ───────────── #}
         <link rel="manifest" href="/manifest.json">
-        
-        {# Icons #}
-        <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('build/images/icon-192x192.png') }}">
-        <link rel="apple-touch-icon" sizes="192x192" href="{{ asset('build/images/icon-192x192.png') }}">
-        
+
+        {# ── Icônes (dossier public/icons/ — stable, hors build) ──────────── #}
+        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+        <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
+        <link rel="apple-touch-icon"      sizes="192x192" href="/icons/icon-192x192.png">
+
         {% block stylesheets %}
             {{ encore_entry_link_tags('app') }}
         {% endblock %}
 
         {% block javascripts %}
             {{ encore_entry_script_tags('app') }}
-            
-            {# Service Worker Registration #}
+
+            {# ── Service Worker ───────────────────────────────────────────── #}
             <script>
-                if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-                    window.addEventListener('load', () => {
-                        navigator.serviceWorker.register('/service-worker.js')
-                            .then(registration => {
-                                console.log('SW registered:', registration);
-                            })
-                            .catch(error => {
-                                console.log('SW registration failed:', error);
+            (function () {
+                if (!('serviceWorker' in navigator)) return;
+
+                // En dev on autorise HTTP pour pouvoir tester le SW localement.
+                // En production, le SW ne tourne que sur HTTPS (sécurité navigateur garantie).
+                var isDev  = {{ app.debug ? 'true' : 'false' }};
+                var isHTTPS = window.location.protocol === 'https:';
+                var isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+
+                if (!isHTTPS && !isLocalhost && !isDev) return;
+
+                window.addEventListener('load', function () {
+                    navigator.serviceWorker
+                        .register('/service-worker.js')
+                        .then(function (reg) {
+                            console.info('[SW] Enregistré :', reg.scope);
+
+                            // Détection de mise à jour disponible
+                            reg.addEventListener('updatefound', function () {
+                                var newWorker = reg.installing;
+                                newWorker.addEventListener('statechange', function () {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        // Nouvelle version disponible → on peut notifier l'utilisateur
+                                        window.dispatchEvent(new CustomEvent('sw-update-available'));
+                                        console.info('[SW] Nouvelle version disponible.');
+                                    }
+                                });
                             });
-                    });
-                }
+                        })
+                        .catch(function (err) {
+                            console.warn('[SW] Échec enregistrement :', err);
+                        });
+                });
+            })();
             </script>
         {% endblock %}
     </head>

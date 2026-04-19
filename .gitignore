@@ -40,3 +40,6 @@ Thumbs.db
 *.db
 *.sqlite
 /var/data.db
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###

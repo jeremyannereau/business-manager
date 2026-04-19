@@ -1,20 +1,12 @@
 import { createApp } from 'vue';
 import App from './App.vue';
-import EtapesKanban from './components/EtapesKanban.vue';
-import Dashboard from './components/Dashboard.vue';
-import Calendrier from './components/Calendrier.vue';
-import Finances from './components/Finances.vue';
 import Login from './components/auth/Login.vue';
 import Register from './components/auth/Register.vue';
-import UserMenu from './components/UserMenu.vue';
-import OfflineIndicator from './components/OfflineIndicator.vue';
-import BottomNav from './components/BottomNav.vue';
-import InstallPrompt from './components/InstallPrompt.vue';
 
-// Import du Design System
+// Design System
 import './styles/design-system.css';
 
-// Import des composants UI
+// Composants UI globaux
 import Button from './components/ui/Button.vue';
 import Card from './components/ui/Card.vue';
 import Modal from './components/ui/Modal.vue';
@@ -22,20 +14,14 @@ import Badge from './components/ui/Badge.vue';
 
 const app = createApp(App);
 
-// Enregistrer les composants globalement
+// Composants UI enregistrés globalement
 app.component('Button', Button);
 app.component('Card', Card);
 app.component('Modal', Modal);
 app.component('Badge', Badge);
-app.component('EtapesKanban', EtapesKanban);
-app.component('Dashboard', Dashboard);
-app.component('Calendrier', Calendrier);
-app.component('Finances', Finances);
+
+// Les composants Auth sont enregistrés séparément
 app.component('Login', Login);
 app.component('Register', Register);
-app.component('UserMenu', UserMenu);
-app.component('OfflineIndicator', OfflineIndicator);
-app.component('BottomNav', BottomNav);
-app.component('InstallPrompt', InstallPrompt);
 
 app.mount('#app');

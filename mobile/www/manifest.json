@@ -1,0 +1,10 @@
+{
+  "app.css": "./app.css",
+  "app.js": "./app.js",
+  "auth.css": "./auth.css",
+  "auth.js": "./auth.js",
+  "runtime.js": "./runtime.js",
+  "830.js": "./830.js",
+  "726.js": "./726.js",
+  "280.js": "./280.js"
+}

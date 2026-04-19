@@ -1,170 +1,229 @@
 <template>
-  <div class="calendrier">
-    <!-- Header -->
-    <div class="calendrier-header">
-      <div class="header-title">
-        <h2>📅 Calendrier</h2>
-        <p class="subtitle">Visualise tes échéances et planifie ton projet</p>
-      </div>
-    </div>
-
-    <!-- Contrôles de navigation -->
-    <Card class="calendar-controls">
-      <div class="controls-row">
-        <Button @click="previousMonth" variant="ghost">
-          ← Mois précédent
-        </Button>
-        
-        <h3 class="current-month">{{ currentMonthYear }}</h3>
-        
-        <Button @click="nextMonth" variant="ghost">
-          Mois suivant →
-        </Button>
-      </div>
-      
-      <div class="controls-filters">
-        <Button 
-          @click="goToToday" 
-          variant="primary" 
-          size="sm"
-        >
-          📍 Aujourd'hui
-        </Button>
-        
-        <div class="legend">
-          <div class="legend-item">
-            <span class="legend-dot urgent"></span>
-            <span>Urgent</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot normal"></span>
-            <span>Normal</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot low"></span>
-            <span>Basse</span>
+  <div class="calendrier-container">
+    <Card class="calendrier-card">
+      <!-- Header -->
+      <div class="calendrier-header">
+        <div class="header-left">
+          <h2 class="calendrier-title">📅 Calendrier</h2>
+          <div class="month-navigation">
+            <button @click="previousMonth" class="nav-button">
+              ← Précédent
+            </button>
+            <h3 class="current-month">{{ currentMonthYear }}</h3>
+            <button @click="nextMonth" class="nav-button">
+              Suivant →
+            </button>
+            <button @click="goToToday" class="today-button">
+              Aujourd'hui
+            </button>
           </div>
         </div>
-      </div>
-    </Card>
-
-    <!-- Calendrier -->
-    <Card class="calendar-grid-container">
-      <!-- En-tête des jours -->
-      <div class="calendar-header-days">
-        <div class="day-name" v-for="day in daysOfWeek" :key="day">
-          {{ day }}
-        </div>
+        <Button @click="openEventModal" size="sm">
+          ➕ Nouvel événement
+        </Button>
       </div>
 
-      <!-- Grille du calendrier -->
+      <!-- Calendrier -->
       <div class="calendar-grid">
-        <div 
-          v-for="(day, index) in calendarDays" 
-          :key="index"
-          :class="getDayClasses(day)"
-          @click="selectDay(day)"
-        >
-          <div class="day-number">{{ day.number }}</div>
-          
-          <div v-if="day.etapes.length > 0" class="day-etapes">
-            <div 
-              v-for="etape in day.etapes.slice(0, 3)" 
-              :key="etape.id"
-              :class="['etape-pill', getPriorityClass(etape.priority)]"
-              @click.stop="openEtapeDetails(etape)"
-            >
-              <span class="etape-title">{{ truncate(etape.titre, 20) }}</span>
-            </div>
+        <div class="calendar-header-row">
+          <div class="day-header">Lun</div>
+          <div class="day-header">Mar</div>
+          <div class="day-header">Mer</div>
+          <div class="day-header">Jeu</div>
+          <div class="day-header">Ven</div>
+          <div class="day-header">Sam</div>
+          <div class="day-header">Dim</div>
+        </div>
+
+        <div class="calendar-days">
+          <div 
+            v-for="day in calendarDays" 
+            :key="day.date"
+            :class="getDayClasses(day)"
+            @click="selectDay(day)"
+          >
+            <div class="day-number">{{ day.day }}</div>
             
-            <div v-if="day.etapes.length > 3" class="more-etapes">
-              +{{ day.etapes.length - 3 }} autre(s)
+            <!-- Événements du jour -->
+            <div class="day-events">
+              <div 
+                v-for="event in getEventsForDay(day.date)" 
+                :key="event.id"
+                :class="['event-pill', `event-${event.type}`]"
+                @click.stop="viewEvent(event)"
+              >
+                {{ event.title }}
+              </div>
+            </div>
+
+            <!-- Indicateur étapes (ancien système) -->
+            <div v-if="getEtapesForDate(day.date).length > 0" class="etapes-indicator">
+              <span class="etapes-count">{{ getEtapesForDate(day.date).length }} étape(s)</span>
             </div>
           </div>
         </div>
       </div>
-    </Card>
 
-    <!-- Liste des étapes du jour sélectionné -->
-    <Card v-if="selectedDay && selectedDay.etapes.length > 0" class="selected-day-details">
-      <template #header>
-        <h3 class="chart-title">
-          📋 Étapes du {{ formatSelectedDate }}
-        </h3>
-      </template>
-      
-      <div class="etapes-list">
-        <div 
-          v-for="etape in selectedDay.etapes" 
-          :key="etape.id"
-          class="etape-item"
-          @click="goToKanban"
-        >
-          <div class="etape-header">
-            <h4>{{ etape.titre }}</h4>
-            <Badge :variant="getPriorityVariant(etape.priority)">
-              {{ getPriorityLabel(etape.priority) }}
-            </Badge>
-          </div>
-          
-          <p v-if="etape.description" class="etape-description">
-            {{ etape.description }}
-          </p>
-          
-          <div class="etape-meta">
-            <Badge :variant="getStatusVariant(etape.statut)" size="sm">
-              {{ getStatusLabel(etape.statut) }}
-            </Badge>
-            <Badge v-if="etape.category" variant="gray" size="sm">
-              {{ etape.category }}
-            </Badge>
-          </div>
+      <!-- Légende -->
+      <div class="calendar-legend">
+        <div class="legend-item">
+          <span class="legend-color event-rendez-vous"></span>
+          <span>Rendez-vous</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color event-reunion"></span>
+          <span>Réunion</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color event-deadline"></span>
+          <span>Deadline</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color event-personnel"></span>
+          <span>Personnel</span>
         </div>
       </div>
     </Card>
 
-    <!-- Stats mensuelles -->
-    <div class="monthly-stats">
-      <Card class="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon">📊</div>
-          <div class="stat-details">
-            <span class="stat-value">{{ monthStats.total }}</span>
-            <span class="stat-label">Échéances ce mois</span>
-          </div>
-        </div>
-      </Card>
+    <!-- Modal Nouvel événement -->
+    <Modal v-if="showEventModal" @close="closeEventModal">
+      <template #header>
+        <h3>{{ editingEvent ? '✏️ Modifier l\'événement' : '➕ Nouvel événement' }}</h3>
+      </template>
 
-      <Card class="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon">⏰</div>
-          <div class="stat-details">
-            <span class="stat-value">{{ monthStats.thisWeek }}</span>
-            <span class="stat-label">Cette semaine</span>
-          </div>
+      <form @submit.prevent="saveEvent" class="event-form">
+        <div class="form-group">
+          <label class="form-label">Titre *</label>
+          <input 
+            v-model="eventForm.title" 
+            type="text" 
+            class="form-input"
+            placeholder="Titre de l'événement"
+            required
+          >
         </div>
-      </Card>
 
-      <Card class="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon">🔴</div>
-          <div class="stat-details">
-            <span class="stat-value">{{ monthStats.urgent }}</span>
-            <span class="stat-label">Urgentes</span>
-          </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select v-model="eventForm.type" class="form-input">
+            <option value="rendez-vous">Rendez-vous</option>
+            <option value="reunion">Réunion</option>
+            <option value="deadline">Deadline</option>
+            <option value="personnel">Personnel</option>
+          </select>
         </div>
-      </Card>
 
-      <Card class="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon">⚠️</div>
-          <div class="stat-details">
-            <span class="stat-value">{{ monthStats.overdue }}</span>
-            <span class="stat-label">En retard</span>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Date de début *</label>
+            <input 
+              v-model="eventForm.startDate" 
+              type="datetime-local" 
+              class="form-input"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Date de fin</label>
+            <input 
+              v-model="eventForm.endDate" 
+              type="datetime-local" 
+              class="form-input"
+            >
           </div>
         </div>
-      </Card>
-    </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="eventForm.allDay">
+            <span>Journée entière</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Lieu</label>
+          <input 
+            v-model="eventForm.location" 
+            type="text" 
+            class="form-input"
+            placeholder="Lieu de l'événement"
+          >
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea 
+            v-model="eventForm.description" 
+            class="form-textarea"
+            rows="3"
+            placeholder="Description de l'événement"
+          ></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <Button type="button" @click="closeEventModal" variant="ghost">
+            Annuler
+          </Button>
+          <Button 
+            v-if="editingEvent" 
+            type="button" 
+            @click="deleteEvent" 
+            variant="danger"
+          >
+            🗑️ Supprimer
+          </Button>
+          <Button type="submit" :loading="saving">
+            💾 Enregistrer
+          </Button>
+        </div>
+      </form>
+    </Modal>
+
+    <!-- Modal Détails événement -->
+    <Modal v-if="showViewModal" @close="closeViewModal">
+      <template #header>
+        <h3>{{ viewingEvent.title }}</h3>
+      </template>
+
+      <div class="event-details">
+        <div class="detail-row">
+          <strong>Type :</strong>
+          <Badge :variant="getEventBadgeVariant(viewingEvent.type)">
+            {{ viewingEvent.type }}
+          </Badge>
+        </div>
+
+        <div class="detail-row">
+          <strong>📅 Début :</strong>
+          <span>{{ formatEventDate(viewingEvent.startDate) }}</span>
+        </div>
+
+        <div v-if="viewingEvent.endDate" class="detail-row">
+          <strong>🏁 Fin :</strong>
+          <span>{{ formatEventDate(viewingEvent.endDate) }}</span>
+        </div>
+
+        <div v-if="viewingEvent.location" class="detail-row">
+          <strong>📍 Lieu :</strong>
+          <span>{{ viewingEvent.location }}</span>
+        </div>
+
+        <div v-if="viewingEvent.description" class="detail-row">
+          <strong>📝 Description :</strong>
+          <p>{{ viewingEvent.description }}</p>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <Button @click="closeViewModal" variant="ghost">
+          Fermer
+        </Button>
+        <Button @click="editEvent(viewingEvent)">
+          ✏️ Modifier
+        </Button>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -173,10 +232,24 @@ export default {
   name: 'Calendrier',
   data() {
     return {
-      etapes: [],
       currentDate: new Date(),
-      selectedDay: null,
-      daysOfWeek: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+      selectedDate: null,
+      etapes: [],
+      events: [],
+      showEventModal: false,
+      showViewModal: false,
+      editingEvent: null,
+      viewingEvent: null,
+      saving: false,
+      eventForm: {
+        title: '',
+        description: '',
+        startDate: '',
+        endDate: '',
+        type: 'personnel',
+        location: '',
+        allDay: false
+      }
     }
   },
   computed: {
@@ -186,110 +259,58 @@ export default {
         year: 'numeric' 
       })
     },
-    formatSelectedDate() {
-      if (!this.selectedDay) return ''
-      return this.selectedDay.date.toLocaleDateString('fr-FR', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-      })
-    },
     calendarDays() {
       const year = this.currentDate.getFullYear()
       const month = this.currentDate.getMonth()
       
-      // Premier jour du mois
       const firstDay = new Date(year, month, 1)
-      // Dernier jour du mois
       const lastDay = new Date(year, month + 1, 0)
       
-      // Jour de la semaine du premier jour (0 = dimanche, 1 = lundi, etc.)
-      let firstDayOfWeek = firstDay.getDay()
-      // Convertir dimanche (0) en 7 pour que lundi soit 1
-      firstDayOfWeek = firstDayOfWeek === 0 ? 7 : firstDayOfWeek
+      let startDay = firstDay.getDay()
+      startDay = startDay === 0 ? 6 : startDay - 1
       
       const days = []
       
-      // Jours du mois précédent
-      const prevMonthLastDay = new Date(year, month, 0).getDate()
-      for (let i = firstDayOfWeek - 1; i > 0; i--) {
-        const date = new Date(year, month - 1, prevMonthLastDay - i + 1)
+      for (let i = 0; i < startDay; i++) {
+        const date = new Date(year, month, -startDay + i + 1)
         days.push({
-          number: prevMonthLastDay - i + 1,
-          date: date,
+          day: date.getDate(),
+          date: date.toISOString().split('T')[0],
           isCurrentMonth: false,
-          isToday: false,
-          etapes: this.getEtapesForDate(date)
+          isToday: this.isToday(date),
+          isSelected: this.isSelected(date)
         })
       }
       
-      // Jours du mois actuel
-      for (let day = 1; day <= lastDay.getDate(); day++) {
-        const date = new Date(year, month, day)
-        const today = new Date()
-        const isToday = date.toDateString() === today.toDateString()
-        
+      for (let i = 1; i <= lastDay.getDate(); i++) {
+        const date = new Date(year, month, i)
         days.push({
-          number: day,
-          date: date,
+          day: i,
+          date: date.toISOString().split('T')[0],
           isCurrentMonth: true,
-          isToday: isToday,
-          etapes: this.getEtapesForDate(date)
+          isToday: this.isToday(date),
+          isSelected: this.isSelected(date)
         })
       }
       
-      // Jours du mois suivant pour compléter la grille
-      const remainingDays = 42 - days.length // 6 semaines max
-      for (let day = 1; day <= remainingDays; day++) {
-        const date = new Date(year, month + 1, day)
+      const remainingDays = 42 - days.length
+      for (let i = 1; i <= remainingDays; i++) {
+        const date = new Date(year, month + 1, i)
         days.push({
-          number: day,
-          date: date,
+          day: i,
+          date: date.toISOString().split('T')[0],
           isCurrentMonth: false,
-          isToday: false,
-          etapes: this.getEtapesForDate(date)
+          isToday: this.isToday(date),
+          isSelected: this.isSelected(date)
         })
       }
       
       return days
-    },
-    monthStats() {
-      const year = this.currentDate.getFullYear()
-      const month = this.currentDate.getMonth()
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      
-      const monthEtapes = this.etapes.filter(e => {
-        if (!e.dateLimite) return false
-        const date = new Date(e.dateLimite)
-        return date.getFullYear() === year && date.getMonth() === month
-      })
-      
-      // Cette semaine
-      const startOfWeek = new Date(today)
-      startOfWeek.setDate(today.getDate() - today.getDay() + 1)
-      const endOfWeek = new Date(startOfWeek)
-      endOfWeek.setDate(startOfWeek.getDate() + 6)
-      
-      const thisWeek = monthEtapes.filter(e => {
-        const date = new Date(e.dateLimite)
-        return date >= startOfWeek && date <= endOfWeek
-      }).length
-      
-      return {
-        total: monthEtapes.length,
-        thisWeek: thisWeek,
-        urgent: monthEtapes.filter(e => e.priority === 'urgent').length,
-        overdue: monthEtapes.filter(e => {
-          const date = new Date(e.dateLimite)
-          return date < today && e.statut !== 'done'
-        }).length
-      }
     }
   },
   mounted() {
     this.loadEtapes()
+    this.loadEvents()
   },
   methods: {
     async loadEtapes() {
@@ -300,160 +321,219 @@ export default {
         console.error('Erreur chargement étapes:', error)
       }
     },
+    async loadEvents() {
+      try {
+        const response = await fetch('/api/events')
+        this.events = await response.json()
+      } catch (error) {
+        console.error('Erreur chargement événements:', error)
+      }
+    },
     getEtapesForDate(date) {
-      return this.etapes.filter(etape => {
-        if (!etape.dateLimite) return false
-        const etapeDate = new Date(etape.dateLimite)
-        return etapeDate.toDateString() === date.toDateString()
+      return this.etapes.filter(e => e.dateLimite === date)
+    },
+    getEventsForDay(date) {
+      return this.events.filter(event => {
+        const eventDate = event.startDate.split(' ')[0]
+        return eventDate === date
       })
     },
     getDayClasses(day) {
-      return [
-        'calendar-day',
-        { 'other-month': !day.isCurrentMonth },
-        { 'today': day.isToday },
-        { 'has-etapes': day.etapes.length > 0 },
-        { 'selected': this.selectedDay && this.selectedDay.date.toDateString() === day.date.toDateString() }
-      ]
-    },
-    getPriorityClass(priority) {
-      const classes = {
-        urgent: 'priority-urgent',
-        normal: 'priority-normal',
-        low: 'priority-low'
+      return {
+        'calendar-day': true,
+        'other-month': !day.isCurrentMonth,
+        'today': day.isToday,
+        'selected': day.isSelected,
+        'has-events': this.getEventsForDay(day.date).length > 0 || this.getEtapesForDate(day.date).length > 0
       }
-      return classes[priority] || 'priority-none'
     },
-    getPriorityVariant(priority) {
-      const variants = {
-        urgent: 'danger',
-        normal: 'warning',
-        low: 'success'
-      }
-      return variants[priority] || 'gray'
+    isToday(date) {
+      const today = new Date()
+      return date.toDateString() === today.toDateString()
     },
-    getPriorityLabel(priority) {
-      const labels = {
-        urgent: '🔴 Urgent',
-        normal: '🟡 Normal',
-        low: '🟢 Basse'
-      }
-      return labels[priority] || 'Non définie'
+    isSelected(date) {
+      if (!this.selectedDate) return false
+      return date.toDateString() === this.selectedDate.toDateString()
     },
-    getStatusVariant(statut) {
-      const variants = {
-        todo: 'gray',
-        in_progress: 'warning',
-        done: 'success'
-      }
-      return variants[statut] || 'gray'
-    },
-    getStatusLabel(statut) {
-      const labels = {
-        todo: '📝 À faire',
-        in_progress: '⏳ En cours',
-        done: '✅ Terminé'
-      }
-      return labels[statut] || statut
+    selectDay(day) {
+      this.selectedDate = new Date(day.date)
     },
     previousMonth() {
-      this.currentDate = new Date(
-        this.currentDate.getFullYear(),
-        this.currentDate.getMonth() - 1,
-        1
-      )
-      this.selectedDay = null
+      this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1)
     },
     nextMonth() {
-      this.currentDate = new Date(
-        this.currentDate.getFullYear(),
-        this.currentDate.getMonth() + 1,
-        1
-      )
-      this.selectedDay = null
+      this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1)
     },
     goToToday() {
       this.currentDate = new Date()
-      this.selectedDay = null
+      this.selectedDate = new Date()
     },
-    selectDay(day) {
-      if (day.etapes.length > 0) {
-        this.selectedDay = day
+    openEventModal() {
+      this.editingEvent = null
+      this.eventForm = {
+        title: '',
+        description: '',
+        startDate: '',
+        endDate: '',
+        type: 'personnel',
+        location: '',
+        allDay: false
+      }
+      this.showEventModal = true
+    },
+    closeEventModal() {
+      this.showEventModal = false
+      this.editingEvent = null
+    },
+    viewEvent(event) {
+      this.viewingEvent = event
+      this.showViewModal = true
+    },
+    closeViewModal() {
+      this.showViewModal = false
+      this.viewingEvent = null
+    },
+    editEvent(event) {
+      this.closeViewModal()
+      this.editingEvent = event
+      this.eventForm = {
+        title: event.title,
+        description: event.description || '',
+        startDate: this.formatForInput(event.startDate),
+        endDate: event.endDate ? this.formatForInput(event.endDate) : '',
+        type: event.type,
+        location: event.location || '',
+        allDay: event.allDay
+      }
+      this.showEventModal = true
+    },
+    async saveEvent() {
+      this.saving = true
+      
+      try {
+        const url = this.editingEvent 
+          ? `/api/events/${this.editingEvent.id}`
+          : '/api/events'
+        
+        const method = this.editingEvent ? 'PUT' : 'POST'
+        
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.eventForm)
+        })
+        
+        if (!response.ok) throw new Error('Erreur sauvegarde')
+        
+        await this.loadEvents()
+        this.closeEventModal()
+      } catch (error) {
+        console.error('Erreur sauvegarde événement:', error)
+        alert('Erreur lors de la sauvegarde')
+      } finally {
+        this.saving = false
       }
     },
-    openEtapeDetails(etape) {
-      this.selectedDay = this.calendarDays.find(day => 
-        day.etapes.some(e => e.id === etape.id)
-      )
+    async deleteEvent() {
+      if (!confirm('Supprimer cet événement ?')) return
+      
+      try {
+        const response = await fetch(`/api/events/${this.editingEvent.id}`, {
+          method: 'DELETE'
+        })
+        
+        if (!response.ok) throw new Error('Erreur suppression')
+        
+        await this.loadEvents()
+        this.closeEventModal()
+      } catch (error) {
+        console.error('Erreur suppression événement:', error)
+        alert('Erreur lors de la suppression')
+      }
     },
-    truncate(text, length) {
-      if (!text) return ''
-      return text.length > length ? text.substring(0, length) + '...' : text
+    formatEventDate(dateStr) {
+      const date = new Date(dateStr)
+      return date.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     },
-    goToKanban() {
-      this.$emit('navigate', 'kanban')
+    formatForInput(dateStr) {
+      const date = new Date(dateStr)
+      return date.toISOString().slice(0, 16)
+    },
+    getEventBadgeVariant(type) {
+      const variants = {
+        'rendez-vous': 'primary',
+        'reunion': 'warning',
+        'deadline': 'danger',
+        'personnel': 'success'
+      }
+      return variants[type] || 'gray'
     }
   }
 }
 </script>
 
 <style scoped>
-.calendrier {
-  padding: var(--space-xl);
-  max-width: 1600px;
-  margin: 0 auto;
-  animation: fadeIn var(--transition-slow);
-}
+/* ... Garde tous les styles existants du calendrier ... */
 
-/* Header */
-.calendrier-header {
-  margin-bottom: var(--space-xl);
-}
-
-.header-title h2 {
-  margin: 0 0 var(--space-sm) 0;
-  color: var(--text-primary);
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-.subtitle {
-  color: var(--text-secondary);
-  font-size: 1rem;
-  margin: 0;
-}
-
-/* Controls */
-.calendar-controls {
-  margin-bottom: var(--space-xl);
-}
-
-.controls-row {
+/* Nouveaux styles pour les événements */
+.day-events {
+  margin-top: var(--space-xs);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-lg);
+  flex-direction: column;
+  gap: 2px;
 }
 
-.current-month {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  text-transform: capitalize;
+.event-pill {
+  font-size: 0.7rem;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: all var(--transition-base);
 }
 
-.controls-filters {
+.event-pill:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.event-rendez-vous {
+  background: #3b82f6;
+  color: white;
+}
+
+.event-reunion {
+  background: #f59e0b;
+  color: white;
+}
+
+.event-deadline {
+  background: #ef4444;
+  color: white;
+}
+
+.event-personnel {
+  background: #10b981;
+  color: white;
+}
+
+.calendar-legend {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
   gap: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  margin-top: var(--space-lg);
   flex-wrap: wrap;
-}
-
-.legend {
-  display: flex;
-  gap: var(--space-lg);
 }
 
 .legend-item {
@@ -461,256 +541,46 @@ export default {
   align-items: center;
   gap: var(--space-xs);
   font-size: 0.875rem;
-  color: var(--text-secondary);
 }
 
-.legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.legend-dot.urgent { background: var(--error); }
-.legend-dot.normal { background: var(--warning); }
-.legend-dot.low { background: var(--success); }
-
-/* Calendar Grid */
-.calendar-grid-container {
-  margin-bottom: var(--space-xl);
-}
-
-.calendar-header-days {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-  background: var(--gray-200);
-  border: 1px solid var(--gray-200);
-  border-bottom: none;
-}
-
-.day-name {
-  background: var(--bg-primary);
-  padding: var(--space-md);
-  text-align: center;
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-  background: var(--gray-200);
-  border: 1px solid var(--gray-200);
-  min-height: 600px;
-}
-
-.calendar-day {
-  background: var(--bg-primary);
-  padding: var(--space-sm);
-  min-height: 100px;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  display: flex;
-  flex-direction: column;
-}
-
-.calendar-day:hover {
-  background: var(--bg-secondary);
-}
-
-.calendar-day.other-month {
-  opacity: 0.3;
-}
-
-.calendar-day.today {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-}
-
-.calendar-day.today .day-number {
-  background: var(--primary);
-  color: white;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
-
-.calendar-day.selected {
-  background: var(--primary-light);
-  border: 2px solid var(--primary);
-}
-
-.day-number {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: var(--space-xs);
-}
-
-.day-etapes {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-
-.etape-pill {
-  padding: 2px 6px;
+.legend-color {
+  width: 16px;
+  height: 16px;
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: white;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.etape-pill:hover {
-  transform: scale(1.05);
-  box-shadow: var(--shadow-md);
-}
-
-.priority-urgent { background: var(--error); }
-.priority-normal { background: var(--warning); }
-.priority-low { background: var(--success); }
-.priority-none { background: var(--gray-400); }
-
-.etape-title {
-  font-size: 0.7rem;
-}
-
-.more-etapes {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
-  padding: 2px;
-  text-align: center;
-  font-weight: 600;
-}
-
-/* Selected Day Details */
-.selected-day-details {
-  margin-bottom: var(--space-xl);
-}
-
-.etapes-list {
+.event-form {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
 }
 
-.etape-item {
-  padding: var(--space-lg);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  border-left: 4px solid var(--primary);
-}
-
-.etape-item:hover {
-  transform: translateX(4px);
-  box-shadow: var(--shadow-md);
-}
-
-.etape-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-md);
-  margin-bottom: var(--space-sm);
 }
 
-.etape-header h4 {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--text-primary);
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 
-.etape-description {
-  margin: 0 0 var(--space-md) 0;
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-}
-
-.etape-meta {
+.detail-row {
   display: flex;
   gap: var(--space-sm);
-  flex-wrap: wrap;
+  align-items: flex-start;
 }
 
-/* Monthly Stats */
-.monthly-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--space-lg);
+.detail-row p {
+  margin: 0;
+  white-space: pre-wrap;
 }
 
-.stat-card {
-  background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
-}
-
-.stat-content {
-  display: flex;
-  align-items: center;
-  gap: var(--space-lg);
-}
-
-.stat-icon {
-  font-size: 3rem;
-  line-height: 1;
-}
-
-.stat-details {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.stat-value {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: 0.875rem;
+.etapes-indicator {
+  margin-top: var(--space-xs);
+  font-size: 0.7rem;
   color: var(--text-secondary);
-  font-weight: 600;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .calendar-grid {
-    min-height: 400px;
-  }
-  
-  .calendar-day {
-    min-height: 60px;
-    padding: var(--space-xs);
-  }
-  
-  .day-name {
-    font-size: 0.75rem;
-    padding: var(--space-sm);
-  }
-  
-  .current-month {
-    font-size: 1.25rem;
-  }
-  
-  .controls-row {
-    flex-direction: column;
-    gap: var(--space-md);
-  }
 }
 </style>

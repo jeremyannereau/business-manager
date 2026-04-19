@@ -1,0 +1,27 @@
+{
+  "entrypoints": {
+    "app": {
+      "js": [
+        "./runtime.js",
+        "./830.js",
+        "./726.js",
+        "./280.js",
+        "./app.js"
+      ],
+      "css": [
+        "./app.css"
+      ]
+    },
+    "auth": {
+      "js": [
+        "./runtime.js",
+        "./830.js",
+        "./280.js",
+        "./auth.js"
+      ],
+      "css": [
+        "./auth.css"
+      ]
+    }
+  }
+}

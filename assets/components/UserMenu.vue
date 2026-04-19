@@ -49,6 +49,9 @@
 <script>
 export default {
   name: 'UserMenu',
+  props: {
+    logoPath: { type: String, default: null },
+  },
   data() {
     return {
       user: null,

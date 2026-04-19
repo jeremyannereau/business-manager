@@ -1,43 +1,23 @@
 <template>
   <nav class="bottom-nav show-mobile">
-    <button 
-      @click="$emit('navigate', 'home')" 
+    <!-- Bouton Accueil toujours présent -->
+    <button
+      @click="$emit('navigate', 'home')"
       :class="['nav-item', { active: currentView === 'home' }]"
     >
       <span class="nav-icon">🏠</span>
       <span class="nav-label">Accueil</span>
     </button>
-    
-    <button 
-      @click="$emit('navigate', 'dashboard')" 
-      :class="['nav-item', { active: currentView === 'dashboard' }]"
+
+    <!-- Boutons générés depuis les modules actifs (max 4 pour ne pas surcharger) -->
+    <button
+      v-for="module in visibleModules"
+      :key="module.key"
+      @click="$emit('navigate', module.key)"
+      :class="['nav-item', { active: currentView === module.key }]"
     >
-      <span class="nav-icon">📊</span>
-      <span class="nav-label">Dashboard</span>
-    </button>
-    
-    <button 
-      @click="$emit('navigate', 'kanban')" 
-      :class="['nav-item', { active: currentView === 'kanban' }]"
-    >
-      <span class="nav-icon">📋</span>
-      <span class="nav-label">Étapes</span>
-    </button>
-    
-    <button 
-      @click="$emit('navigate', 'calendrier')" 
-      :class="['nav-item', { active: currentView === 'calendrier' }]"
-    >
-      <span class="nav-icon">📅</span>
-      <span class="nav-label">Calendrier</span>
-    </button>
-    
-    <button 
-      @click="$emit('navigate', 'finances')" 
-      :class="['nav-item', { active: currentView === 'finances' }]"
-    >
-      <span class="nav-icon">💰</span>
-      <span class="nav-label">Finances</span>
+      <span class="nav-icon">{{ module.icon }}</span>
+      <span class="nav-label">{{ module.shortLabel }}</span>
     </button>
   </nav>
 </template>
@@ -46,11 +26,17 @@
 export default {
   name: 'BottomNav',
   props: {
-    currentView: {
-      type: String,
-      required: true
-    }
-  }
+    currentView: { type: String, required: true },
+    // Modules actifs transmis par App.vue (tableau d'objets { key, icon, shortLabel })
+    modules: { type: Array, default: () => [] },
+  },
+  emits: ['navigate'],
+  computed: {
+    // On affiche au max 4 modules (+ Accueil = 5 items max, standard mobile)
+    visibleModules() {
+      return this.modules.slice(0, 4)
+    },
+  },
 }
 </script>
 
@@ -63,7 +49,7 @@ export default {
   background: var(--bg-primary);
   border-top: 1px solid var(--gray-200);
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(var(--nav-cols, 5), 1fr);
   padding: var(--space-xs) 0;
   padding-bottom: calc(var(--space-xs) + env(safe-area-inset-bottom));
   z-index: 1000;
@@ -86,20 +72,9 @@ export default {
   -webkit-tap-highlight-color: transparent;
 }
 
-.nav-item:active {
-  transform: scale(0.95);
-}
+.nav-item:active  { transform: scale(0.95); }
+.nav-item.active  { color: var(--primary); }
 
-.nav-item.active {
-  color: var(--primary);
-}
-
-.nav-icon {
-  font-size: 1.5rem;
-}
-
-.nav-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-}
+.nav-icon  { font-size: 1.5rem; }
+.nav-label { font-size: 0.7rem; font-weight: 600; }
 </style>

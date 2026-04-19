@@ -1,0 +1,14 @@
+nelmio_cors:
+    defaults:
+        origin_regex: true
+        allow_origin: ['%env(CORS_ALLOW_ORIGIN)%']
+        allow_methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+        allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With']
+        allow_credentials: true   # ← indispensable pour envoyer les cookies
+        max_age: 3600
+    paths:
+        '^/api/':
+            allow_origin: ['.*']  # en dev on accepte tout
+            allow_credentials: true
+        '^/manifest.json':
+            allow_origin: ['.*']
