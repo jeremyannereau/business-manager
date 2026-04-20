@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk=self.webpackChunk||[]).push([[933],{3396(e,t,n){var p=n(1425),a=n(8199),o=n(8463),u=n(4614);if(document.getElementById("auth-app")){var c=(0,p.createApp)({});c.component("Button",u.A),c.component("Login",a.A),c.component("Register",o.A),c.mount("#auth-app")}}},e=>{e.O(0,[346,70],()=>{return t=3396,e(e.s=t);var t});e.O()}]);
